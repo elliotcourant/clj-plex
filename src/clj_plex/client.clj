@@ -96,7 +96,23 @@
                     :playlistItemID
                     :duration
                     :addedAt
-                    :updatedAt])))
+                    :updatedAt])
+      (assoc :kind :Track
+             :media (->> element :content (map response)))))
+
+(defmethod response :Media
+  [element]
+  (-> element
+      :attrs
+      (select-keys [:id
+                    :key
+                    :duration
+                    :file
+                    :size
+                    :container
+                    :hasThumbnail])
+      (assoc :kind :Media
+             :parts (->> element :content (map response)))))
 
 (defrecord Client [token baseurl] PlexClient
   (playlists [this]
