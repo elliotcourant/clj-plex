@@ -5,7 +5,8 @@
 
 (defprotocol PlexClient
   "The protocol for interacting with a Plex server."
-  (playlist [this title] "Retrieve a plex playlist matching the specified title."))
+  (playlists [this] "Retrieve all Plex playlists.")
+  (playlist [this title] "Retrieve a Plex playlist matching the specified title."))
 
 (defn- build-url
   "Takes the current client and builds a request URL using the baseurl and the
@@ -24,11 +25,12 @@
   ([client path params]
    (let [url     (build-url client path)
          options (cond-> (default-client-options client)
-                   (map? params) (merge {:query-params params}))]
-     (client/get url options))))
+                   (map? params) (merge {:query-params params}))
+         response (client/get url options)]
+     (util/parse-xml-response response))))
 
 (defrecord Client [token baseurl]
   PlexClient
-  (playlist [this title]
-    (let [result (http-get this "/playlists" {:title title})])))
+  (playlists [this] (http-get this "/playlists"))
+  (playlist [this title] (http-get this "/playlists" {:title title})))
 

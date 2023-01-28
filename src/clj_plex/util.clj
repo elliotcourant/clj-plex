@@ -1,5 +1,8 @@
 (ns clj-plex.util
-  (:require [clojure.string :as c.string]))
+  (:require [clojure.string :as c.string]
+            [clojure.java.io :as io]
+            [clojure.xml :as xml])
+  (:import [javax.xml.parsers SAXParserFactory]))
 
 (defn trim-left
   "Will take the provided string and if that string begins with the provided
@@ -19,4 +22,16 @@
     (subs str 0 (- (count str) (count suffix)))
     str))
 
-
+(defn parse-xml-response [{:keys [body]}]
+  (let [non-validating (fn [s ch]
+                         (..
+                          (doto
+                           (SAXParserFactory/newInstance)
+                            (.setFeature
+                             "http://apache.org/xml/features/nonvalidating/load-external-dtd" false))
+                          (newSAXParser)
+                          (parse s ch)))
+        body (if (instance? String body)
+               (-> body .getBytes io/input-stream)
+               body)]
+    (xml/parse body non-validating)))
