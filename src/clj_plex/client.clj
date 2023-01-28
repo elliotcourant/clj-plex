@@ -5,8 +5,8 @@
 
 (defprotocol PlexClient
   "The protocol for interacting with a Plex server."
-  (playlists [this] "Retrieve all Plex playlists.")
-  (playlist [this title] "Retrieve a Plex playlist matching the specified title.")
+  (playlists       [this] "Retrieve all Plex playlists.")
+  (playlist        [this title] "Retrieve a Plex playlist matching the specified title.")
   (playlist->items [this rating-key] "Retrieve the items on a playlist by the playlist's rating key."))
 
 (defn- build-url
@@ -34,85 +34,20 @@
   (fn [response-xml]
     (-> response-xml :tag keyword)))
 
-(defmethod response :MediaContainer
+;; If we need to parse a response based on its tag, we can do so by creating a
+;; new multimethod here that will branch by tag. Otherwise everything will fall
+;; into this implementation which makes all the attributes key value pairs and
+;; adds a :kind field with the tag name, and a :content field if there are
+;; children to the tag. Children are parsed recursively with response.
+(defmethod response :default
   [element]
-  (let [attrs (:attrs element)
+  (let [tag     (keyword (or (:tag element) :Unknown))
+        attrs   (:attrs element)
         content (->> element :content (map response))]
-    (assoc attrs :content content
-                 :kind    :MediaContainer)))
-
-(defmethod response :Playlist
-  [element]
-  (-> element
-      :attrs
-      (select-keys [:ratingKey
-                    :key
-                    :guid
-                    :type
-                    :title
-                    :titleSort
-                    :summary
-                    :smart
-                    :playlistType
-                    :icon
-                    :viewCount
-                    :lastViewedAt
-                    :leafCount
-                    :addedAt
-                    :updatedAt])
-      (assoc :kind :Playlist)))
-
-(defmethod response :Track
-  [element]
-  ;; TODO Media and Part Elements
-  (-> element
-      :attrs
-      (select-keys [:ratingKey
-                    :key
-                    :parentRatingKey
-                    :grandparentRatingKey
-                    :guid
-                    :parentGuid
-                    :grandparentGuid
-                    :parentStudio
-                    :type
-                    :title
-                    :grandparentKey
-                    :parentKey
-                    :librarySectionTitle
-                    :librarySecionID
-                    :librarySectionKey
-                    :grandparentTitle
-                    :parentTitle
-                    :summary
-                    :index
-                    :parentIndex
-                    :ratingCount
-                    :lastViewedAt
-                    :parentYear
-                    :thumb
-                    :parentThumb
-                    :grandparentThumb
-                    :playlistItemID
-                    :duration
-                    :addedAt
-                    :updatedAt])
-      (assoc :kind :Track
-             :media (->> element :content (map response)))))
-
-(defmethod response :Media
-  [element]
-  (-> element
-      :attrs
-      (select-keys [:id
-                    :key
-                    :duration
-                    :file
-                    :size
-                    :container
-                    :hasThumbnail])
-      (assoc :kind :Media
-             :parts (->> element :content (map response)))))
+    (cond->
+      (assoc attrs :kind tag)
+      (seq? content)
+      (assoc :content content))))
 
 (defrecord Client [token baseurl] PlexClient
   (playlists [this]
