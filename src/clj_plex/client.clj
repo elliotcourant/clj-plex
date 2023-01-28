@@ -1,6 +1,7 @@
 (ns clj-plex.client
   (:require
    [clj-http.client :as client]
+   [clj-plex.playlist :as playlist]
    [clj-plex.util :as util]))
 
 (defprotocol PlexClient
@@ -31,6 +32,12 @@
 
 (defrecord Client [token baseurl]
   PlexClient
-  (playlists [this] (http-get this "/playlists"))
-  (playlist [this title] (http-get this "/playlists" {:title title})))
+  (playlists [this]
+    (-> this
+        (http-get "/playlists")
+        (playlist/response)))
+  (playlist [this title]
+    (-> this
+        (http-get "/playlists" {:title title})
+        (playlist/response))))
 
