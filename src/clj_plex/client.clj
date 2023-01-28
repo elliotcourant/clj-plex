@@ -38,7 +38,7 @@
   (let [attrs (:attrs element)
         content (->> element :content (map response))]
     (assoc attrs :content content
-                 :kind :MediaContainer)))
+                 :kind    :MediaContainer)))
 
 (defmethod response :Playlist
   [element]
