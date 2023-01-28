@@ -1,7 +1,6 @@
 (ns clj-plex.client
   (:require
    [clj-http.client :as client]
-   [clj-plex.playlist :as playlist]
    [clj-plex.util :as util]))
 
 (defprotocol PlexClient
@@ -30,14 +29,47 @@
          response (client/get url options)]
      (util/parse-xml-response response))))
 
-(defrecord Client [token baseurl]
+(defmulti response
+  (fn [response-xml]
+    (-> response-xml :tag keyword)))
+
+(defmethod response :MediaContainer
+  [element]
+  (let [attrs (:attrs element)
+        content (->> element :content (map response))]
+    (assoc attrs :content content
+                 :kind :MediaContainer)))
+
+(defmethod response :Playlist
+  [element]
+  (-> element
+      :attrs
+      (select-keys [:ratingKey
+                    :key
+                    :guid
+                    :type
+                    :title
+                    :titleSort
+                    :summary
+                    :smart
+                    :playlistType
+                    :icon
+                    :viewCount
+                    :lastViewedAt
+                    :leafCount
+                    :addedAt
+                    :updatedAt])
+      (assoc :kind :Playlist)))
+
+(defrecord Client
+  [token baseurl]
   PlexClient
   (playlists [this]
     (-> this
         (http-get "/playlists")
-        (playlist/response)))
+        (response)))
   (playlist [this title]
     (-> this
         (http-get "/playlists" {:title title})
-        (playlist/response))))
+        (response))))
 
