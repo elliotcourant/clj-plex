@@ -7,7 +7,10 @@
   "The protocol for interacting with a Plex server."
   (playlists       [this] "Retrieve all Plex playlists.")
   (playlist        [this title] "Retrieve a Plex playlist matching the specified title.")
-  (playlist->items [this rating-key] "Retrieve the items on a playlist by the playlist's rating key."))
+  (playlist->items [this rating-key] "Retrieve the items on a playlist by the playlist's rating key.")
+  (sections        [this] "Retrieve all of the different libraries for the current Plex server.")
+  (library->all    [this section-key] "Retrieve all of the items within a given library section."))
+
 
 (defn- build-url
   "Takes the current client and builds a request URL using the baseurl and the
@@ -50,16 +53,24 @@
       (assoc :content content))))
 
 (defrecord Client [token baseurl] PlexClient
-  (playlists [this]
-    (-> this
-        (http-get "/playlists")
-        (response)))
-  (playlist [this title]
-    (-> this
-        (http-get "/playlists" {:title title})
-        (response)))
-  (playlist->items [this rating-key]
-    (-> this
-        (http-get (str "/playlists/" rating-key "/items"))
-        (response))))
+           (playlists [this]
+             (-> this
+                 (http-get "/playlists")
+                 (response)))
+           (playlist [this title]
+             (-> this
+                 (http-get "/playlists" {:title title})
+                 (response)))
+           (playlist->items [this rating-key]
+             (-> this
+                 (http-get (str "/playlists/" rating-key "/items"))
+                 (response)))
+           (sections [this]
+             (-> this
+                 (http-get "/library/sections")
+                 (response)))
+           (library->all [this section-id]
+             (-> this
+                 (http-get (str "/library/sections/" section-id "/all"))
+                 (response))))
 
