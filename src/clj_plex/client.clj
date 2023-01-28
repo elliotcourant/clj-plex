@@ -6,7 +6,8 @@
 (defprotocol PlexClient
   "The protocol for interacting with a Plex server."
   (playlists [this] "Retrieve all Plex playlists.")
-  (playlist [this title] "Retrieve a Plex playlist matching the specified title."))
+  (playlist [this title] "Retrieve a Plex playlist matching the specified title.")
+  (playlist->items [this rating-key] "Retrieve the items on a playlist by the playlist's rating key."))
 
 (defn- build-url
   "Takes the current client and builds a request URL using the baseurl and the
@@ -61,9 +62,43 @@
                     :updatedAt])
       (assoc :kind :Playlist)))
 
-(defrecord Client
-  [token baseurl]
-  PlexClient
+(defmethod response :Track
+  [element]
+  ;; TODO Media and Part Elements
+  (-> element
+      :attrs
+      (select-keys [:ratingKey
+                    :key
+                    :parentRatingKey
+                    :grandparentRatingKey
+                    :guid
+                    :parentGuid
+                    :grandparentGuid
+                    :parentStudio
+                    :type
+                    :title
+                    :grandparentKey
+                    :parentKey
+                    :librarySectionTitle
+                    :librarySecionID
+                    :librarySectionKey
+                    :grandparentTitle
+                    :parentTitle
+                    :summary
+                    :index
+                    :parentIndex
+                    :ratingCount
+                    :lastViewedAt
+                    :parentYear
+                    :thumb
+                    :parentThumb
+                    :grandparentThumb
+                    :playlistItemID
+                    :duration
+                    :addedAt
+                    :updatedAt])))
+
+(defrecord Client [token baseurl] PlexClient
   (playlists [this]
     (-> this
         (http-get "/playlists")
@@ -71,5 +106,9 @@
   (playlist [this title]
     (-> this
         (http-get "/playlists" {:title title})
+        (response)))
+  (playlist->items [this rating-key]
+    (-> this
+        (http-get (str "/playlists/" rating-key "/items"))
         (response))))
 
