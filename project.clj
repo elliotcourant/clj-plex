@@ -1,9 +1,9 @@
 (defproject com.elliotcourant/clj-plex "0.0.0"
-  :description "FIXME: write description"
+  :description "A Plex media server client for Clojure."
   :url "https://github.com/elliotcourant/clj-plex"
   :license {:name "Eclipse Public License"
             :url  "http://www.eclipse.org/legal/epl-v10.html"}
-  :dependencies []
+  :dependencies [[clj-http "3.12.3"]]
   :plugins [[lein-cloverage "1.0.13"]
             [lein-shell "0.5.0"]
             [lein-ancient "0.6.15"]
