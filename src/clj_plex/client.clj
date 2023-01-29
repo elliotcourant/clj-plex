@@ -1,15 +1,31 @@
 (ns clj-plex.client
   (:require
    [clj-http.client :as client]
-   [clj-plex.util :as util]))
+   [clj-plex.util :as util]
+   [clojure.string :as c.string]))
 
 (defprotocol PlexClient
   "The protocol for interacting with a Plex server."
-  (playlists       [this] "Retrieve all Plex playlists.")
-  (playlist        [this title] "Retrieve a Plex playlist matching the specified title.")
-  (playlist->items [this rating-key] "Retrieve the items on a playlist by the playlist's rating key.")
-  (sections        [this] "Retrieve all of the different libraries for the current Plex server.")
-  (library->all    [this section-key] "Retrieve all of the items within a given library section."))
+  (playlists             [this]
+                         "Retrieve all Plex playlists.")
+  (playlist              [this title] "Retrieve a Plex playlist matching the
+                         specified title.")
+  (playlist->items       [this rating-key]
+                         "Retrieve the items on a playlist by the playlist's
+                         rating key.")
+  (sections              [this]
+                         "Retrieve all of the different libraries for the
+                         current Plex server.")
+  (library->all          [this section-key]
+                         "Retrieve all of the items within a given library
+                         section.")
+  (library->refresh->all [this]
+                         "Scan all of the content within all of the available
+                         Plex libraries.")
+  (playlist->item->move  [this rating-key track after]
+                         "Move the specified track to be after the :after track
+                         within the playlist. If :after is nil, then the track
+                         will be moved to the first item in the playlist."))
 
 
 (defn- build-url
@@ -31,7 +47,25 @@
          options (cond-> (default-client-options client)
                    (map? params) (merge {:query-params params}))
          response (client/get url options)]
-     (util/parse-xml-response response))))
+     (if (-> response
+             :headers
+             :Content-Type
+             (clojure.string/starts-with? "text/xml;"))
+       (util/parse-xml-response response)
+       (:body response)))))
+
+(defn- http-put
+  ([client path params]
+   (let [url     (build-url client path)
+         options (cond-> (default-client-options client)
+                   (map? params) (merge {:query-params params}))
+         response (client/put url options)]
+     (if (-> response
+             :headers
+             :Content-Type
+             (clojure.string/starts-with? "text/xml;"))
+       (util/parse-xml-response response)
+       (:body response)))))
 
 (defmulti response
   (fn [response-xml]
@@ -72,10 +106,21 @@
            (library->all [this section-id]
              (-> this
                  (http-get (str "/library/sections/" section-id "/all"))
-                 (response))))
+                 (response)))
+           (library->refresh->all [this]
+             (-> this
+                 (http-get "/library/sections/all/refresh")))
+           (playlist->item->move [this rating-key track after]
+             (-> this
+                 (http-put
+                  (str "/playlists/" rating-key "/items/" track "/move")
+                  (when (some? after)
+                    {:after after})))))
 
 (comment
   ;; I'm just here for debugging while I develop this.
   (let [c (Client. (System/getenv "PLEX_TOKEN") (System/getenv "PLEX_URL")) ]
-    (playlist->items c "27454")
+    ;; (playlist->items c "27228")
+    (playlist->item->move c "27228" "26544" "26545" )
+    ; (library->refresh->all c)
     ))
