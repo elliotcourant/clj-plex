@@ -49,7 +49,7 @@
         content (->> element :content (map response))]
     (cond->
       (assoc attrs :kind tag)
-      (seq? content)
+      (seq content)
       (assoc :content content))))
 
 (defrecord Client [token baseurl] PlexClient
@@ -74,3 +74,8 @@
                  (http-get (str "/library/sections/" section-id "/all"))
                  (response))))
 
+(comment
+  ;; I'm just here for debugging while I develop this.
+  (let [c (Client. (System/getenv "PLEX_TOKEN") (System/getenv "PLEX_URL")) ]
+    (playlist->items c "27454")
+    ))
