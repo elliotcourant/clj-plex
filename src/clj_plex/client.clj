@@ -115,7 +115,8 @@
                  (http-put
                   (str "/playlists/" rating-key "/items/" track "/move")
                   (when (some? after)
-                    {:after after})))))
+                    {:after after}))
+                 (response))))
 
 (comment
   ;; I'm just here for debugging while I develop this.
