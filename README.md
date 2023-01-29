@@ -6,7 +6,7 @@
 A Plex media server client for Clojure :tada:
 
 ```clj
-[com.elliotcourant/clj-plex "0.0.0"]
+[com.elliotcourant/clj-plex "0.0.1"]
 ```
 
 ## License

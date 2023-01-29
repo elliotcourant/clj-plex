@@ -1,4 +1,4 @@
-(defproject com.elliotcourant/clj-plex "0.0.0"
+(defproject com.elliotcourant/clj-plex "0.0.1"
   :description "A Plex media server client for Clojure."
   :url "https://github.com/elliotcourant/clj-plex"
   :license {:name "Eclipse Public License"
